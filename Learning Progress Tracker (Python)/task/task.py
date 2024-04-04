@@ -52,26 +52,23 @@ class LearningProgressTracker:
             print("Incorrect credentials.")
             return False
 
+        first_name = parts[0]
+        last_name = ' '.join(parts[1:-1])
         email = parts[-1]
-        name = parts[:-1]
-        first_name = name[0]
-        last_name = ' '.join(name[1:]) if len(name) > 1 else ''
-
-        invalid_credentials = False
 
         if not self.validate_name(first_name):
             print("Incorrect first name.")
-            invalid_credentials = True
+            return False
 
         if not self.validate_name(last_name):
             print("Incorrect last name.")
-            invalid_credentials = True
+            return False
 
         if not self.validate_email(email):
             print("Incorrect email.")
-            invalid_credentials = True
+            return False
 
-        return not invalid_credentials
+        return True
 
     @staticmethod
     def validate_name(name):
@@ -86,7 +83,7 @@ class LearningProgressTracker:
     @staticmethod
     def validate_email(email):
         # Should contain name, the @ symbol, and domain
-        pattern = r'^\S+@\S+\.\S+$'
+        pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         return bool(re.match(pattern, email))
 
 
