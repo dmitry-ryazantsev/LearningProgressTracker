@@ -7,11 +7,11 @@ class LearningProgressTracker:
         self.students_list = []
 
     def main(self):
-        self.greet()
+        self.greet_user()
         while True:
             user_command = input().lower()
             if user_command == "exit":
-                self.exit_program()
+                self.exit_command()
                 break
             elif user_command == "add students":
                 self.add_students()
@@ -23,28 +23,28 @@ class LearningProgressTracker:
                 print("Unknown command.")
 
     @staticmethod
-    def greet():
+    def greet_user():
         print("Learning Progress Tracker")
 
     @staticmethod
-    def exit_program():
+    def exit_command():
         print("Bye!")
+
+    def back_command(self):
+        print(f"Total {self.students_number} students have been added.")
 
     def add_students(self):
         print("Enter student credentials or 'back' to return:")
         while True:
             user_command = input().lower()
             if user_command == "back":
-                self.back()
+                self.back_command()
                 return
             else:
                 if self.validate_student_credentials(user_command):
                     self.students_number += 1
                     self.students_list.append(user_command)
                     print("The student has been added.")
-
-    def back(self):
-        print(f"Total {self.students_number} students have been added.")
 
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
