@@ -14,11 +14,13 @@ class LearningProgressTracker:
                 self.exit_program()
                 break
             elif user_command == "add students":
-                self.add_students_loop()
+                self.add_students()
             elif user_command == "back":
-                self.back()
+                print("Enter 'exit' to exit the program.")
+            elif user_command.strip() == "":
+                print("No input")
             else:
-                print("Incorrect command.")
+                print("Unknown command.")
 
     @staticmethod
     def greet():
@@ -28,14 +30,11 @@ class LearningProgressTracker:
     def exit_program():
         print("Bye!")
 
-    def add_students_loop(self):
+    def add_students(self):
         print("Enter student credentials or 'back' to return:")
         while True:
             user_command = input().lower()
-            if user_command == "exit":
-                self.exit_program()
-                return
-            elif user_command == "back":
+            if user_command == "back":
                 self.back()
                 return
             else:
@@ -45,18 +44,18 @@ class LearningProgressTracker:
                     print("The student has been added.")
 
     def back(self):
-        if self.students_number > 0:
-            print(f"Total {self.students_number} students have been added.")
-        else:
-            print("Enter 'exit' to exit the program.")
+        print(f"Total {self.students_number} students have been added.")
 
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
-        if len(parts) != 3:
+        if len(parts) < 3:  # Not enough parts to validate
             print("Incorrect credentials.")
             return False
 
-        first_name, last_name, email = parts
+        email = parts[-1]
+        name = parts[:-1]
+        first_name = name[0]
+        last_name = ' '.join(name[1:]) if len(name) > 1 else ''
 
         invalid_credentials = False
 
@@ -64,7 +63,7 @@ class LearningProgressTracker:
             print("Incorrect first name.")
             invalid_credentials = True
 
-        if not self.validate_last_name(last_name):
+        if not self.validate_name(last_name):
             print("Incorrect last name.")
             invalid_credentials = True
 
@@ -75,15 +74,18 @@ class LearningProgressTracker:
         return not invalid_credentials
 
     @staticmethod
-    def validate_name(first_name):
-        return True
-
-    @staticmethod
-    def validate_last_name(last_name):
-        return True
+    def validate_name(name):
+        # Requirements:
+        # - Only ASCII characters, hyphens and apostrophes
+        # - Hyphens and apostrophes cannot be the first or the last characters
+        # - Hyphens and apostrophes cannot be adjacent to each other
+        # - Must be at least two characters long
+        pattern = r'^[a-z](?!.*[-\']{2})[a-z\' -]*[a-z]$'
+        return bool(re.match(pattern, name, re.IGNORECASE))
 
     @staticmethod
     def validate_email(email):
+        # Should contain name, the @ symbol, and domain
         pattern = r'^\S+@\S+\.\S+$'
         return bool(re.match(pattern, email))
 
