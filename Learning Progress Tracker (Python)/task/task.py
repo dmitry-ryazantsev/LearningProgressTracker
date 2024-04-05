@@ -6,45 +6,11 @@ class LearningProgressTracker:
         self.students_number = 0
         self.students_list = []
 
-    def main(self):
-        self.greet_user()
-        while True:
-            user_command = input().lower()
-            if user_command == "exit":
-                self.exit_command()
-                break
-            elif user_command == "add students":
-                self.add_students()
-            elif user_command == "back":
-                print("Enter 'exit' to exit the program.")
-            elif user_command.strip() == "":
-                print("No input")
-            else:
-                print("Unknown command.")
-
-    @staticmethod
-    def greet_user():
-        print("Learning Progress Tracker")
-
-    @staticmethod
-    def exit_command():
-        print("Bye!")
-
-    def back_command(self):
-        print(f"Total {self.students_number} students have been added.")
-
-    def add_students(self):
-        print("Enter student credentials or 'back' to return:")
-        while True:
-            user_command = input().lower()
-            if user_command == "back":
-                self.back_command()
-                return
-            else:
-                if self.validate_student_credentials(user_command):
-                    self.students_number += 1
-                    self.students_list.append(user_command)
-                    print("The student has been added.")
+    def add_students(self, credentials):
+        if self.validate_student_credentials(credentials):
+            self.students_number += 1
+            self.students_list.append(credentials)
+            print("The student has been added.")
 
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
@@ -87,5 +53,50 @@ class LearningProgressTracker:
         return bool(re.match(pattern, email))
 
 
-program = LearningProgressTracker()
-program.main()
+class UserMenu:
+    def __init__(self, tracker):
+        self.tracker = tracker
+
+    @staticmethod
+    def greet_user():
+        print("Learning Progress Tracker")
+
+    @staticmethod
+    def exit_command():
+        print("Bye!")
+
+    def back_command(self):
+        print(f"Total {self.tracker.students_number} students have been added.")
+
+    def display_menu(self):
+        self.greet_user()
+        while True:
+            user_command = input().lower()
+            if user_command == "exit":
+                self.exit_command()
+                break
+            elif user_command == "add students":
+                print("Enter student credentials or 'back' to return:")
+                while True:
+                    credentials = input().lower().strip()
+                    if credentials == "back":
+                        self.back_command()
+                        break
+                    else:
+                        self.tracker.add_students(credentials)
+            elif user_command == "back":
+                print("Enter 'exit' to exit the program.")
+            elif user_command.strip() == "":
+                print("No input")
+            else:
+                print("Unknown command.")
+
+
+def main():
+    tracker = LearningProgressTracker()
+    menu = UserMenu(tracker)
+    menu.display_menu()
+
+
+if __name__ == "__main__":
+    main()
