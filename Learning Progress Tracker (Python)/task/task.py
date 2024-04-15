@@ -4,12 +4,14 @@ import re
 class LearningProgressTracker:
     def __init__(self):
         self.students_number = 0
-        self.students_list = []
+        self.students = {}
 
     def add_students(self, credentials):
         if self.validate_student_credentials(credentials):
             self.students_number += 1
-            self.students_list.append(credentials)
+            student_id = self.students_number
+
+            self.students[student_id] = credentials
             print("The student has been added.")
 
     def validate_student_credentials(self, credentials):
@@ -34,6 +36,10 @@ class LearningProgressTracker:
             print("Incorrect email.")
             return False
 
+        if not self.is_email_unique(email):
+            print("This email is already taken.")
+            return False
+
         return True
 
     @staticmethod
@@ -51,6 +57,13 @@ class LearningProgressTracker:
         # Should contain name, the @ symbol, and domain
         pattern = r'^[^\s@]+@[^\s@]+\.[^\s@]+$'
         return bool(re.match(pattern, email))
+
+    def is_email_unique(self, email):
+        for credentials in self.students.values():
+            student_email = credentials.split()[-1]
+            if student_email == email:
+                return False
+        return True
 
 
 class UserMenu:

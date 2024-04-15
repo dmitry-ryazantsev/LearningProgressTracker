@@ -62,5 +62,5 @@ def test_adding_students():
     sut.add_students("陳 港 生")
 
     assert sut.students_number == 2, "Number of students is different from expected result"
-    assert sut.students_list == ["John Smith jsmith@hotmail.com",
-                                 "Robert Jemison Van de Graaff robertvdgraaff@mit.edu"]
+    assert sut.students == {1: "John Smith jsmith@hotmail.com",
+                            2: "Robert Jemison Van de Graaff robertvdgraaff@mit.edu"}
