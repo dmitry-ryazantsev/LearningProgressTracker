@@ -68,6 +68,16 @@ class UserMenu:
     def back_command(self):
         print(f"Total {self.tracker.students_number} students have been added.")
 
+    def add_students_command(self):
+        print("Enter student credentials or 'back' to return:")
+        while True:
+            credentials = input().lower().strip()
+            if credentials == "back":
+                self.back_command()
+                break
+            else:
+                self.tracker.add_students(credentials)
+
     def display_menu(self):
         self.greet_user()
         while True:
@@ -76,14 +86,7 @@ class UserMenu:
                 self.exit_command()
                 break
             elif user_command == "add students":
-                print("Enter student credentials or 'back' to return:")
-                while True:
-                    credentials = input().lower().strip()
-                    if credentials == "back":
-                        self.back_command()
-                        break
-                    else:
-                        self.tracker.add_students(credentials)
+                self.add_students_command()
             elif user_command == "back":
                 print("Enter 'exit' to exit the program.")
             elif user_command.strip() == "":
