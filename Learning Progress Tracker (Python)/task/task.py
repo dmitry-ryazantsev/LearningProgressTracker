@@ -14,6 +14,14 @@ class LearningProgressTracker:
             self.students[student_id] = credentials
             print("The student has been added.")
 
+    def list_students(self):
+        if self.students == {}:
+            print("No students found.")
+        else:
+            print("Students:")
+            for student in self.students.keys():
+                print(student)
+
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
         if len(parts) < 3:  # Not enough parts to validate
@@ -91,15 +99,20 @@ class UserMenu:
             else:
                 self.tracker.add_students(credentials)
 
+    def list_students_command(self):
+        self.tracker.list_students()
+
     def display_menu(self):
         self.greet_user()
         while True:
-            user_command = input().lower()
+            user_command = input().lower().strip()
             if user_command == "exit":
                 self.exit_command()
                 break
             elif user_command == "add students":
                 self.add_students_command()
+            elif user_command == "list":
+                self.list_students_command()
             elif user_command == "back":
                 print("Enter 'exit' to exit the program.")
             elif user_command.strip() == "":
