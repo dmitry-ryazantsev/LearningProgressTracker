@@ -31,6 +31,13 @@ class TestCredentialsValidation:
         for email in invalid_emails:
             assert not sut.validate_email(email), f"Expected '{email}' to be an invalid email"
 
+    def test_if_email_is_unique(self):
+        sut = LearningProgressTracker()
+        sut.add_students("John Doe johnd@yahoo.com")
+        sut.add_students("Jane Spark jspark@gmail.com")
+
+        assert not sut.is_email_unique("jspark@gmail.com"), f"Expected the email to be already taken"
+
     def test_whole_credentials_validation(self):
         sut = LearningProgressTracker()
         valid_credentials = ["John Smith jsmith@hotmail.com", "Anny Doolittle anny.md@mail.edu",
@@ -61,6 +68,6 @@ def test_adding_students():
     sut.add_students("Stanisław Oğuz 1@1.1")
     sut.add_students("陳 港 生")
 
-    assert sut.students_number == 2, "Number of students is different from expected result"
-    assert sut.students == {1: "John Smith jsmith@hotmail.com",
-                            2: "Robert Jemison Van de Graaff robertvdgraaff@mit.edu"}
+    assert len(sut.students) == 2, "Number of students is different from expected result"
+    assert sut.students == [{'id': 1, 'credentials': 'John Smith jsmith@hotmail.com', 'subjects': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 0}},
+                            {'id': 2, 'credentials': 'Robert Jemison Van de Graaff robertvdgraaff@mit.edu', 'subjects': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 0}}]

@@ -3,15 +3,18 @@ import re
 
 class LearningProgressTracker:
     def __init__(self):
-        self.students_number = 0
-        self.students = {}
+        self.student_id = 0
+        self.students = []
 
     def add_students(self, credentials):
         if self.validate_student_credentials(credentials):
-            self.students_number += 1
-            student_id = self.students_number
-
-            self.students[student_id] = credentials
+            self.student_id += 1
+            self.students.append({"id": self.student_id,
+                                  "credentials": credentials,
+                                  "subjects": {"Python": 0,
+                                               "DSA": 0,
+                                               "Databases": 0,
+                                               "Flask": 0}})
             print("The student has been added.")
 
     def list_students(self):
@@ -19,8 +22,8 @@ class LearningProgressTracker:
             print("No students found.")
         else:
             print("Students:")
-            for student in self.students.keys():
-                print(student)
+            for student in self.students:
+                print(student["id"])
 
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
@@ -67,10 +70,12 @@ class LearningProgressTracker:
         return bool(re.match(pattern, email))
 
     def is_email_unique(self, email):
-        for credentials in self.students.values():
+        for student in self.students:
+            credentials = student["credentials"]
             student_email = credentials.split()[-1]
             if student_email == email:
                 return False
+
         return True
 
 
@@ -87,7 +92,7 @@ class UserMenu:
         print("Bye!")
 
     def back_command(self):
-        print(f"Total {self.tracker.students_number} students have been added.")
+        print(f"Total {len(self.tracker.students)} students have been added.")
 
     def add_students_command(self):
         print("Enter student credentials or 'back' to return:")
