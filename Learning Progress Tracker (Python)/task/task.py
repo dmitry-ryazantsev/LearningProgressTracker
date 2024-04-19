@@ -30,19 +30,38 @@ class LearningProgressTracker:
             print("Incorrect points format.")
             return
 
-        data = self.convert_points_string_into_int_array(points)
-        student_id = data[0]
-        points_to_add = data[1:]
+        student_id, points_to_add = self.parse_points(points)
+        student = self.find_student_by_id(student_id)
+        if student is None:
+            return
 
-        for student in self.students:
-            if student["id"] == student_id:
-                subjects = student["subjects"]
-                for subject, pts in zip(["Python", "DSA", "Databases", "Flask"], points_to_add):
-                    subjects[subject] += pts
-                print("Points updated.")
-                return
+        subjects = student["subjects"]
+        for subject, pts in zip(["Python", "DSA", "Databases", "Flask"], points_to_add):
+            subjects[subject] += pts
+        print("Points updated.")
 
-        print(f"No student is found for id={student_id}.")
+    def print_student_points(self, student_id):
+        student = self.find_student_by_id(student_id)
+        if student is None:
+            return
+
+        subjects = student["subjects"]
+        python_points = subjects["Python"]
+        dsa_points = subjects["DSA"]
+        databases_points = subjects["Databases"]
+        flask_points = subjects["Flask"]
+
+        print(f"{student_id} points: Python={python_points}; DSA={dsa_points}; Databases={databases_points}; Flask={flask_points}.")
+
+    def find_student_by_id(self, student_id):
+        try:
+            for student in self.students:
+                if student["id"] == int(student_id):
+                    return student
+            raise ValueError
+        except ValueError:
+            print(f"No student is found for id={student_id}.")
+            return None
 
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
@@ -99,13 +118,15 @@ class LearningProgressTracker:
 
     @staticmethod
     def validate_points(points):
-        points_pattern = r'^\d+( \d+){4}$'
+        points_pattern = r'^\w+( \d+){4}$'
         return re.match(points_pattern, points)
 
     @staticmethod
-    def convert_points_string_into_int_array(points):
-        modified_points = [int(x) for x in points.split()]
-        return modified_points
+    def parse_points(points):
+        data = points.split()
+        student_id = data[0]
+        points_to_add = [int(x) for x in data[1:]]
+        return student_id, points_to_add
 
 
 class UserMenu:
@@ -145,6 +166,15 @@ class UserMenu:
             else:
                 self.tracker.add_points(points)
 
+    def find_student_command(self):
+        print("Enter an id or 'back' to return:")
+        while True:
+            student = input()
+            if student == "back":
+                break
+            else:
+                self.tracker.print_student_points(student)
+
     def display_menu(self):
         self.greet_user()
         while True:
@@ -158,6 +188,8 @@ class UserMenu:
                 self.list_students_command()
             elif user_command == "add points":
                 self.add_points_command()
+            elif user_command == "find":
+                self.find_student_command()
             elif user_command == "back":
                 print("Enter 'exit' to exit the program.")
             elif user_command.strip() == "":
