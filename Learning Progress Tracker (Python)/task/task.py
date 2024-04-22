@@ -59,6 +59,8 @@ class LearningProgressTracker:
                 if student["id"] == int(student_id):
                     return student
             raise ValueError
+        # No student found and a string that can't be converted to int
+        # are both handled as ValueError
         except ValueError:
             print(f"No student is found for id={student_id}.")
             return None
@@ -141,15 +143,12 @@ class UserMenu:
     def exit_command():
         print("Bye!")
 
-    def back_command(self):
-        print(f"Total {len(self.tracker.students)} students have been added.")
-
     def add_students_command(self):
         print("Enter student credentials or 'back' to return:")
         while True:
             credentials = input().lower().strip()
             if credentials == "back":
-                self.back_command()
+                print(f"Total {len(self.tracker.students)} students have been added.")
                 break
             else:
                 self.tracker.add_students(credentials)
@@ -169,11 +168,11 @@ class UserMenu:
     def find_student_command(self):
         print("Enter an id or 'back' to return:")
         while True:
-            student = input()
-            if student == "back":
+            student_id = input()
+            if student_id == "back":
                 break
             else:
-                self.tracker.print_student_points(student)
+                self.tracker.print_student_points(student_id)
 
     def display_menu(self):
         self.greet_user()

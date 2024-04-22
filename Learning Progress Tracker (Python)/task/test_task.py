@@ -59,6 +59,65 @@ class TestCredentialsValidation:
             assert not sut.validate_student_credentials(credentials), f"Expected '{credentials}' to be invalid credentials"
 
 
+class TestPointsOperations:
+    def test_points_validation(self):
+        sut = LearningProgressTracker()
+        valid_points = ["1 5 5 5 5", "1000 25 5 3 74", "9999999 99999999 9999999 9999999 9999999",
+                        "0 0 0 0 0", "0 0 0 0 1", "s23a56e 4 11 0 7", "id 1 2 3 4"]
+        invalid_points = ["", "-1 1 1 1", "1 1 2 A", "1 1 1", "-1 -1 -1 -1", "1010 -12 5 6 8", "2.5 2.5 2.4 1.8"]
+
+        for points in valid_points:
+            assert sut.validate_points(points), f"Expected '{points}' to be valid points"
+
+        for points in invalid_points:
+            assert not sut.validate_points(points), f"Expected '{points}' to be invalid points"
+
+    def test_parsing_points(self):
+        sut = LearningProgressTracker()
+        student_id, points_to_add = sut.parse_points("1000 25 5 3 74")
+
+        assert student_id == "1000"
+        assert points_to_add == [25, 5, 3, 74]
+
+    def test_adding_points(self):
+        sut = LearningProgressTracker()
+
+        sut.add_students("John Smith jsmith@hotmail.com")
+        sut.add_students("Robert Jemison Van de Graaff robertvdgraaff@mit.edu")
+
+        sut.add_points("1 0 0 0 0")
+        sut.add_points("2 4 11 0 1")
+        sut.add_points("1 0 0 0 5")
+
+        assert sut.students == [{'id': 1, 'credentials': 'John Smith jsmith@hotmail.com',
+                                 'subjects': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 5}},
+                                {'id': 2, 'credentials': 'Robert Jemison Van de Graaff robertvdgraaff@mit.edu',
+                                 'subjects': {'Python': 4, 'DSA': 11, 'Databases': 0, 'Flask': 1}}], f"Students' points do not match the expected result"
+
+    def test_points_are_printed_for_existing_student(self, capsys):
+        sut = LearningProgressTracker()
+
+        sut.add_students("John Smith jsmith@hotmail.com")
+        sut.add_students("Robert Jemison Van de Graaff robertvdgraaff@mit.edu")
+
+        sut.add_points("2 4 11 0 1")
+        sut.print_student_points("2")
+
+        captured = capsys.readouterr()
+        all_outputs = captured.out.strip().split('\n')
+        last_output = all_outputs[-1]
+
+        assert last_output == "2 points: Python=4; DSA=11; Databases=0; Flask=1."
+
+    def test_correct_message_is_printed_when_student_is_not_found(self, capsys):
+        sut = LearningProgressTracker()
+
+        sut.print_student_points("1")
+        captured = capsys.readouterr()
+
+        assert captured.out.strip() == "No student is found for id=1."
+
+
 def test_adding_students():
     sut = LearningProgressTracker()
 
