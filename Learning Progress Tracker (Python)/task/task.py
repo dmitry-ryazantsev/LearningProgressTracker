@@ -1,3 +1,4 @@
+import hashlib
 import re
 
 
@@ -9,7 +10,8 @@ class LearningProgressTracker:
     def add_students(self, credentials):
         if self.validate_student_credentials(credentials):
             self.student_id += 1
-            self.students.append({"id": self.student_id,
+            hashed_id = self.hash_student_id(self.student_id)
+            self.students.append({"id": hashed_id,
                                   "credentials": credentials,
                                   "subjects": {"Python": 0,
                                                "DSA": 0,
@@ -53,17 +55,19 @@ class LearningProgressTracker:
 
         print(f"{student_id} points: Python={python_points}; DSA={dsa_points}; Databases={databases_points}; Flask={flask_points}.")
 
+    @staticmethod
+    def hash_student_id(student_id):
+        hashed_id = hashlib.sha256(str(student_id).encode()).hexdigest()
+        shortened_hashed_id = hashed_id[:10]
+        return shortened_hashed_id
+
     def find_student_by_id(self, student_id):
-        try:
-            for student in self.students:
-                if student["id"] == int(student_id):
-                    return student
-            raise ValueError
-        # No student found and a string that can't be converted to int
-        # are both handled as ValueError
-        except ValueError:
-            print(f"No student is found for id={student_id}.")
-            return None
+        for student in self.students:
+            if student["id"] == student_id:
+                return student
+
+        print(f"No student is found for id={student_id}.")
+        return None
 
     def validate_student_credentials(self, credentials):
         parts = credentials.split()
