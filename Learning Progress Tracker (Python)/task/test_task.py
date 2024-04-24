@@ -31,12 +31,19 @@ class TestCredentialsValidation:
         for email in invalid_emails:
             assert not sut.validate_email(email), f"Expected '{email}' to be an invalid email"
 
-    def test_if_email_is_unique(self):
+    def test_if_email_is_unique_for_already_taken_email(self):
         sut = LearningProgressTracker()
         sut.add_students("John Doe johnd@yahoo.com")
         sut.add_students("Jane Spark jspark@gmail.com")
 
         assert not sut.is_email_unique("jspark@gmail.com"), f"Expected the email to be already taken"
+
+    def test_if_email_is_unique_for_not_previously_used_email(self):
+        sut = LearningProgressTracker()
+        sut.add_students("John Doe johnd@yahoo.com")
+        sut.add_students("Jane Spark jspark@gmail.com")
+
+        assert sut.is_email_unique("foo@gmail.com"), f"Expected the email to be unique"
 
     def test_whole_credentials_validation(self):
         sut = LearningProgressTracker()
@@ -72,14 +79,14 @@ class TestPointsOperations:
         for points in invalid_points:
             assert not sut.validate_points(points), f"Expected '{points}' to be invalid points"
 
-    def test_parsing_points(self):
+    def test_parsing_points_results_in_string_id_and_int_points_list(self):
         sut = LearningProgressTracker()
         student_id, points_to_add = sut.parse_points("1000 25 5 3 74")
 
         assert student_id == "1000"
         assert points_to_add == [25, 5, 3, 74]
 
-    def test_adding_points(self):
+    def test_points_are_added_to_selected_student(self):
         sut = LearningProgressTracker()
 
         sut.add_students("John Smith jsmith@hotmail.com")
@@ -118,7 +125,7 @@ class TestPointsOperations:
         assert captured.out.strip() == "No student is found for id=6b86b273ff.", f"The message when the student is not found does not match the expected message"
 
 
-def test_adding_students():
+def test_should_only_add_students_that_match_credential_requirements():
     sut = LearningProgressTracker()
 
     sut.add_students("John Smith jsmith@hotmail.com")
