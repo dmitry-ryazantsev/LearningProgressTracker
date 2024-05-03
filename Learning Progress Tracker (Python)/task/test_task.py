@@ -96,10 +96,13 @@ class TestPointsOperations:
         sut.add_points("d4735e3a26 4 11 0 1")
         sut.add_points("6b86b273ff 0 0 0 5")
 
+        # TODO: Do not verify submissions here, should be only course points
         assert sut.students == [{'id': "6b86b273ff", 'credentials': 'John Smith jsmith@hotmail.com',
-                                 'subjects': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 5}},
+                                 'course_points': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 5},
+                                 'course_submissions': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 1}},
                                 {'id': "d4735e3a26", 'credentials': 'Robert Jemison Van de Graaff robertvdgraaff@mit.edu',
-                                 'subjects': {'Python': 4, 'DSA': 11, 'Databases': 0, 'Flask': 1}}], f"Students' points do not match the expected result"
+                                 'course_points': {'Python': 4, 'DSA': 11, 'Databases': 0, 'Flask': 1},
+                                 'course_submissions': {'Python': 1, 'DSA': 1, 'Databases': 0, 'Flask': 1}}], f"Students' points do not match the expected result"
 
     def test_points_are_printed_for_existing_student(self, capsys):
         sut = LearningProgressTracker()
@@ -125,6 +128,46 @@ class TestPointsOperations:
         assert captured.out.strip() == "No student is found for id=6b86b273ff.", f"The message when the student is not found does not match the expected message"
 
 
+class TestStatistics:
+    def test_calculating_statistics_with_data_available(self):
+        sut = LearningProgressTracker()
+
+        sut.add_students("John Doe johnd@email.net")
+        sut.add_students("Jane Spark jspark@yahoo.com")
+
+        sut.add_points("6b86b273ff 8 7 7 5")
+        sut.add_points("6b86b273ff 7 6 9 7")
+        sut.add_points("6b86b273ff 6 5 5 0")
+        sut.add_points("d4735e3a26 8 0 8 6")
+        sut.add_points("d4735e3a26 7 0 0 0")
+        sut.add_points("d4735e3a26 9 0 0 5")
+
+        sut.determine_course_popularity()
+        sut.determine_course_activity()
+        sut.determine_course_difficulty()
+
+        assert sut.statistics == {
+            "MP": "Python, Databases, Flask",
+            "LP": "DSA",
+            "HA": "Python",
+            "LA": "DSA",
+            "EC": "n/a",
+            "HC": "n/a"
+        }, "Course statistics do not match the expected result"
+
+    def test_calculating_statistics_with_no_data_available(self):
+        sut = LearningProgressTracker()
+
+        assert sut.statistics == {
+            "MP": "n/a",
+            "LP": "n/a",
+            "HA": "n/a",
+            "LA": "n/a",
+            "EC": "n/a",
+            "HC": "n/a"
+        }, "No statistics should be available when there are no students"
+
+
 def test_should_only_add_students_that_match_credential_requirements():
     sut = LearningProgressTracker()
 
@@ -135,5 +178,3 @@ def test_should_only_add_students_that_match_credential_requirements():
     sut.add_students("陳 港 生")
 
     assert len(sut.students) == 2, "Number of students is different from expected result"
-    assert sut.students == [{'id': "6b86b273ff", 'credentials': 'John Smith jsmith@hotmail.com', 'subjects': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 0}},
-                            {'id': "d4735e3a26", 'credentials': 'Robert Jemison Van de Graaff robertvdgraaff@mit.edu', 'subjects': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 0}}]

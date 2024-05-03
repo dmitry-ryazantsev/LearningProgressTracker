@@ -6,6 +6,15 @@ class LearningProgressTracker:
     def __init__(self):
         self.student_id = 0
         self.students = []
+        self.courses = ["Python", "DSA", "Databases", "Flask"]
+        self.statistics = {
+            "MP": "n/a",
+            "LP": "n/a",
+            "HA": "n/a",
+            "LA": "n/a",
+            "EC": "n/a",
+            "HC": "n/a"
+        }
 
     def add_students(self, credentials):
         if self.validate_student_credentials(credentials):
@@ -13,10 +22,8 @@ class LearningProgressTracker:
             hashed_id = self.hash_student_id(self.student_id)
             self.students.append({"id": hashed_id,
                                   "credentials": credentials,
-                                  "subjects": {"Python": 0,
-                                               "DSA": 0,
-                                               "Databases": 0,
-                                               "Flask": 0}})
+                                  "course_points": {course: 0 for course in self.courses},
+                                  "course_submissions": {course: 0 for course in self.courses}})
             print("The student has been added.")
 
     def list_students(self):
@@ -37,9 +44,12 @@ class LearningProgressTracker:
         if student is None:
             return
 
-        subjects = student["subjects"]
-        for subject, pts in zip(["Python", "DSA", "Databases", "Flask"], points_to_add):
-            subjects[subject] += pts
+        course_points = student["course_points"]
+        submissions = student["course_submissions"]
+        for course, pts in zip(self.courses, points_to_add):
+            if pts > 0:
+                course_points[course] += pts
+                submissions[course] += 1
         print("Points updated.")
 
     def print_student_points(self, student_id):
@@ -47,13 +57,8 @@ class LearningProgressTracker:
         if student is None:
             return
 
-        subjects = student["subjects"]
-        python_points = subjects["Python"]
-        dsa_points = subjects["DSA"]
-        databases_points = subjects["Databases"]
-        flask_points = subjects["Flask"]
-
-        print(f"{student_id} points: Python={python_points}; DSA={dsa_points}; Databases={databases_points}; Flask={flask_points}.")
+        course_points = student["course_points"]
+        print(f"{student_id} points: Python={course_points['Python']}; DSA={course_points['DSA']}; Databases={course_points['Databases']}; Flask={course_points['Flask']}.")
 
     @staticmethod
     def hash_student_id(student_id):
@@ -134,6 +139,49 @@ class LearningProgressTracker:
         points_to_add = [int(x) for x in data[1:]]
         return student_id, points_to_add
 
+    def determine_course_popularity(self):
+        course_enrollment = {course: 0 for course in self.courses}
+
+        for student in self.students:
+            for course, points in student["course_points"].items():
+                if points > 0:
+                    course_enrollment[course] += 1
+
+        max_count = max(course_enrollment.values())
+        min_count = min(course_enrollment.values())
+
+        most_popular_courses = [course for course, count in course_enrollment.items() if count == max_count]
+        self.statistics["MP"] = ", ".join(most_popular_courses)
+
+        if max_count != min_count:
+            least_popular_courses = [course for course, count in course_enrollment.items() if count == min_count]
+            self.statistics["LP"] = ", ".join(least_popular_courses)
+
+    def determine_course_activity(self):
+        course_submissions = {course: 0 for course in self.courses}
+
+        for student in self.students:
+            for course, submissions in student["course_submissions"].items():
+                course_submissions[course] += submissions
+
+        max_count = max(course_submissions.values())
+        min_count = min(course_submissions.values())
+
+        most_submitted_courses = [course for course, count in course_submissions.items() if count == max_count]
+        self.statistics["HA"] = ", ".join(most_submitted_courses)
+
+        if max_count != min_count:
+            least_submitted_courses = [course for course, count in course_submissions.items() if count == min_count]
+            self.statistics["LA"] = ", ".join(least_submitted_courses)
+
+    def determine_course_difficulty(self):
+        # The easiest course has the highest average grade per assignment;
+        return
+
+    def show_course_info(self, course):
+        print(f"{course.upper()}" if course == "dsa" else f"{course.capitalize()}")
+        print("id\tpoints\tcompleted")
+
 
 class UserMenu:
     def __init__(self, tracker):
@@ -178,6 +226,30 @@ class UserMenu:
             else:
                 self.tracker.print_student_points(student_id)
 
+    def statistics_command(self):
+        print("Type the name of a course to see details or 'back' to quit:")
+
+        if self.tracker.students:
+            self.tracker.determine_course_popularity()
+            self.tracker.determine_course_activity()
+            self.tracker.determine_course_difficulty()
+
+        print(f"Most popular: {self.tracker.statistics['MP']}\n"
+              f"Least popular: {self.tracker.statistics['LP']}\n"
+              f"Highest activity: {self.tracker.statistics['HA']}\n"
+              f"Lowest activity: {self.tracker.statistics['LA']}\n"
+              f"Easiest course: {self.tracker.statistics['EC']}\n"
+              f"Hardest course: {self.tracker.statistics['HC']}")
+
+        while True:
+            course = input().lower().strip()
+            if course == "back":
+                break
+            if course in [course.lower() for course in self.tracker.courses]:
+                self.tracker.show_course_info(course)
+            else:
+                print("Unknown course.")
+
     def display_menu(self):
         self.greet_user()
         while True:
@@ -193,6 +265,8 @@ class UserMenu:
                 self.add_points_command()
             elif user_command == "find":
                 self.find_student_command()
+            elif user_command == "statistics":
+                self.statistics_command()
             elif user_command == "back":
                 print("Enter 'exit' to exit the program.")
             elif user_command.strip() == "":
