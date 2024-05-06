@@ -182,13 +182,13 @@ class TestStatistics:
         course_info_lines = output_lines[4:]
 
         assert course_info_lines[0] == "Python", "Expected course name in the header"
-        assert course_info_lines[1].strip() == "id           points     completed", "Expected a line with 'id', 'points', 'completed'"
+        assert course_info_lines[1] == "id           points     completed", "Expected a line with 'id', 'points', 'completed'"
         assert course_info_lines[
-                   2].strip() == "d4735e3a26   656        100.0%", "Incorrect data or print format"
+                   2] == "d4735e3a26   656        100.0%", "Incorrect data or print format"
         assert course_info_lines[
                    3] == "6b86b273ff   3          0.5%", "Incorrect data or print format"
 
-    def test_should_show_only_course_name_and_column_headers_with_no_data_available(self, capsys):
+    def test_should_show_only_course_name_and_column_headers_when_top_learners_data_is_blank(self, capsys):
         sut = LearningProgressTracker()
         course = "dsa"
         sut.show_course_top_learners(course)

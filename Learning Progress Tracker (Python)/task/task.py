@@ -160,51 +160,37 @@ class LearningProgressTracker:
             for course, submissions in student["course_submissions"].items():
                 course_submissions[course] += submissions
 
-        # skip updating statistics if enrollment in all courses is zero
-        zero_counter = 0
-        for course in course_enrollment:
-            if course_enrollment[course] == 0:
-                zero_counter += 1
-        if zero_counter == len(self.courses):
-            return
-
-        # determine most and least popular courses
-        max_enrollment = max(course_enrollment.values())
-        min_enrollment = min(course_enrollment.values())
-        most_popular_courses = [course for course, count in course_enrollment.items() if count == max_enrollment]
-        self.statistics["MP"] = ", ".join(most_popular_courses)
-        if max_enrollment != min_enrollment:
-            least_popular_courses = [course for course, count in course_enrollment.items() if count == min_enrollment]
-            self.statistics["LP"] = ", ".join(least_popular_courses)
-
-        # determine highest and lowest activity courses
-        max_submissions = max(course_submissions.values())
-        min_submissions = min(course_submissions.values())
-        most_submitted_courses = [course for course, count in course_submissions.items() if count == max_submissions]
-        self.statistics["HA"] = ", ".join(most_submitted_courses)
-        if max_submissions != min_submissions:
-            least_submitted_courses = [course for course, count in course_submissions.items() if
-                                       count == min_submissions]
-            self.statistics["LA"] = ", ".join(least_submitted_courses)
-
-        # determine easiest and hardest courses
         for course in self.courses:
             if course_submissions[course] > 0:
                 average_course_points[course] = course_points[course] / course_submissions[course]
 
-        max_average_grade = max(average_course_points.values())
-        min_average_grade = min(average_course_points.values())
-        easiest_courses = [course for course, points in average_course_points.items() if points == max_average_grade]
-        self.statistics["EC"] = ", ".join(easiest_courses)
-        if max_average_grade != min_average_grade:
-            hardest_courses = [course for course, points in average_course_points.items() if points == min_average_grade]
-            self.statistics["HC"] = ", ".join(hardest_courses)
+        # Update statistics only if there's data in at least one course
+        zero_counter = 0
+        for course in course_enrollment:
+            if course_enrollment[course] == 0:
+                zero_counter += 1
+        if zero_counter != len(self.courses):
+            # Find most and least popular courses based on student enrollment
+            self.update_course_statistics(course_enrollment, "MP", "LP")
+            # Find highest and lowest activity courses based on submissions
+            self.update_course_statistics(course_submissions, "HA", "LA")
+            # Find easiest and hardest courses based on average course points
+            self.update_course_statistics(average_course_points, "EC", "HC")
+
+    def update_course_statistics(self, dictionary, high_stat, low_stat):
+        max_value = max(dictionary.values())
+        min_value = min(dictionary.values())
+        high_stat_course_list = [course for course, value in dictionary.items() if value == max_value]
+        self.statistics[high_stat] = ", ".join(high_stat_course_list)
+        if max_value != min_value:
+            low_stat_course_list = [course for course, value in dictionary.items() if value == min_value]
+            self.statistics[low_stat] = ", ".join(low_stat_course_list)
 
     def show_course_top_learners(self, course):
         course = course.upper() if course == "dsa" else course.capitalize()
 
         print(course)
-        print("{:<12} {:<10} {:<10}".format("id", "points", "completed"))
+        print("{:<12} {:<10} {:9}".format("id", "points", "completed"))
 
         student_course_info = []
         for student in self.students:
@@ -216,11 +202,11 @@ class LearningProgressTracker:
 
         # Sort by points in descending order
         # and by ID in ascending order for the same number of points
-        student_course_info.sort(key=lambda x: x["id"])
-        student_course_info.sort(key=lambda x: x["points"], reverse=True)
+        student_course_info.sort(key=lambda d: d["id"])
+        student_course_info.sort(key=lambda d: d["points"], reverse=True)
 
         for student in student_course_info:
-            print("{:<12} {:<10} {:<10}".format(student["id"], student["points"], f"{student['course_completion']}%"))
+            print("{:<12} {:<10} {:3}%".format(student["id"], student["points"], student["course_completion"]))
 
     def calculate_course_completion(self, course, points):
         completion_percentage = round(points / self.course_completion_requirements[course] * 100, 1)
