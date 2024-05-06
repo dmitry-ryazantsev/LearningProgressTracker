@@ -142,17 +142,15 @@ class TestStatistics:
         sut.add_points("d4735e3a26 7 0 0 0")
         sut.add_points("d4735e3a26 9 0 0 5")
 
-        sut.determine_course_popularity()
-        sut.determine_course_activity()
-        sut.determine_course_difficulty()
+        sut.calculate_course_statistics()
 
         assert sut.statistics == {
             "MP": "Python, Databases, Flask",
             "LP": "DSA",
             "HA": "Python",
             "LA": "DSA",
-            "EC": "n/a",
-            "HC": "n/a"
+            "EC": "Python",
+            "HC": "Flask"
         }, "Course statistics do not match the expected result"
 
     def test_calculating_statistics_with_no_data_available(self):

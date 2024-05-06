@@ -139,44 +139,60 @@ class LearningProgressTracker:
         points_to_add = [int(x) for x in data[1:]]
         return student_id, points_to_add
 
-    def determine_course_popularity(self):
+    def calculate_course_statistics(self):
         course_enrollment = {course: 0 for course in self.courses}
+        course_submissions = {course: 0 for course in self.courses}
+        course_points = {course: 0 for course in self.courses}
+        average_course_points = {course: 0.0 for course in self.courses}
 
         for student in self.students:
             for course, points in student["course_points"].items():
                 if points > 0:
                     course_enrollment[course] += 1
+                    course_points[course] += points
 
-        max_count = max(course_enrollment.values())
-        min_count = min(course_enrollment.values())
+            for course, submissions in student["course_submissions"].items():
+                if submissions > 0:
+                    course_submissions[course] += submissions
 
-        most_popular_courses = [course for course, count in course_enrollment.items() if count == max_count]
+        # skip updating statistics if enrollment in all courses is zero
+        zero_counter = 0
+        for course in course_enrollment:
+            if course_enrollment[course] == 0:
+                zero_counter += 1
+        if zero_counter == len(self.courses):
+            return
+
+        # determine most and least popular courses
+        max_enrollment = max(course_enrollment.values())
+        min_enrollment = min(course_enrollment.values())
+        most_popular_courses = [course for course, count in course_enrollment.items() if count == max_enrollment]
         self.statistics["MP"] = ", ".join(most_popular_courses)
-
-        if max_count != min_count:
-            least_popular_courses = [course for course, count in course_enrollment.items() if count == min_count]
+        if max_enrollment != min_enrollment:
+            least_popular_courses = [course for course, count in course_enrollment.items() if count == min_enrollment]
             self.statistics["LP"] = ", ".join(least_popular_courses)
 
-    def determine_course_activity(self):
-        course_submissions = {course: 0 for course in self.courses}
-
-        for student in self.students:
-            for course, submissions in student["course_submissions"].items():
-                course_submissions[course] += submissions
-
-        max_count = max(course_submissions.values())
-        min_count = min(course_submissions.values())
-
-        most_submitted_courses = [course for course, count in course_submissions.items() if count == max_count]
+        # determine highest and lowest activity courses
+        max_submissions = max(course_submissions.values())
+        min_submissions = min(course_submissions.values())
+        most_submitted_courses = [course for course, count in course_submissions.items() if count == max_submissions]
         self.statistics["HA"] = ", ".join(most_submitted_courses)
-
-        if max_count != min_count:
-            least_submitted_courses = [course for course, count in course_submissions.items() if count == min_count]
+        if max_submissions != min_submissions:
+            least_submitted_courses = [course for course, count in course_submissions.items() if
+                                       count == min_submissions]
             self.statistics["LA"] = ", ".join(least_submitted_courses)
 
-    def determine_course_difficulty(self):
-        # The easiest course has the highest average grade per assignment;
-        return
+        # determine easiest and hardest courses
+        for course in self.courses:
+            average_course_points[course] = course_points[course] / course_submissions[course]
+
+        max_average_grade = max(average_course_points.values())
+        min_average_grade = min(average_course_points.values())
+        easiest_courses = [course for course, points in average_course_points.items() if points == max_average_grade]
+        self.statistics["EC"] = ", ".join(easiest_courses)
+        if max_average_grade != min_average_grade:
+            hardest_courses = [course for course, points in average_course_points.items() if points == min_average_grade]
+            self.statistics["HC"] = ", ".join(hardest_courses)
 
     def show_course_info(self, course):
         print(f"{course.upper()}" if course == "dsa" else f"{course.capitalize()}")
@@ -230,9 +246,7 @@ class UserMenu:
         print("Type the name of a course to see details or 'back' to quit:")
 
         if self.tracker.students:
-            self.tracker.determine_course_popularity()
-            self.tracker.determine_course_activity()
-            self.tracker.determine_course_difficulty()
+            self.tracker.calculate_course_statistics()
 
         print(f"Most popular: {self.tracker.statistics['MP']}\n"
               f"Least popular: {self.tracker.statistics['LP']}\n"
