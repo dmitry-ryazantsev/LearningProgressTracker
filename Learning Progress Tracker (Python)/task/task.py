@@ -7,6 +7,12 @@ class LearningProgressTracker:
         self.student_id = 0
         self.students = []
         self.courses = ["Python", "DSA", "Databases", "Flask"]
+        self.course_completion_requirements = {
+            "Python": 600,
+            "DSA": 400,
+            "Databases": 480,
+            "Flask": 550
+        }
         self.statistics = {
             "MP": "n/a",
             "LP": "n/a",
@@ -152,8 +158,7 @@ class LearningProgressTracker:
                     course_points[course] += points
 
             for course, submissions in student["course_submissions"].items():
-                if submissions > 0:
-                    course_submissions[course] += submissions
+                course_submissions[course] += submissions
 
         # skip updating statistics if enrollment in all courses is zero
         zero_counter = 0
@@ -184,7 +189,8 @@ class LearningProgressTracker:
 
         # determine easiest and hardest courses
         for course in self.courses:
-            average_course_points[course] = course_points[course] / course_submissions[course]
+            if course_submissions[course] > 0:
+                average_course_points[course] = course_points[course] / course_submissions[course]
 
         max_average_grade = max(average_course_points.values())
         min_average_grade = min(average_course_points.values())
@@ -194,9 +200,35 @@ class LearningProgressTracker:
             hardest_courses = [course for course, points in average_course_points.items() if points == min_average_grade]
             self.statistics["HC"] = ", ".join(hardest_courses)
 
-    def show_course_info(self, course):
-        print(f"{course.upper()}" if course == "dsa" else f"{course.capitalize()}")
-        print("id\tpoints\tcompleted")
+    def show_course_top_learners(self, course):
+        course = course.upper() if course == "dsa" else course.capitalize()
+
+        print(course)
+        print("{:<12} {:<10} {:<10}".format("id", "points", "completed"))
+
+        student_course_info = []
+        for student in self.students:
+            course_points = student["course_points"][course]
+            if course_points > 0:
+                student_course_info.append({"id": student["id"],
+                                            "points": course_points,
+                                            "course_completion": self.calculate_course_completion(course, course_points)})
+
+        # Sort by points in descending order
+        # and by ID in ascending order for the same number of points
+        student_course_info.sort(key=lambda x: x["id"])
+        student_course_info.sort(key=lambda x: x["points"], reverse=True)
+
+        for student in student_course_info:
+            print("{:<12} {:<10} {:<10}".format(student["id"], student["points"], f"{student['course_completion']}%"))
+
+    def calculate_course_completion(self, course, points):
+        completion_percentage = round(points / self.course_completion_requirements[course] * 100, 1)
+
+        if completion_percentage > 100.0:
+            completion_percentage = 100.0
+
+        return completion_percentage
 
 
 class UserMenu:
@@ -260,7 +292,7 @@ class UserMenu:
             if course == "back":
                 break
             if course in [course.lower() for course in self.tracker.courses]:
-                self.tracker.show_course_info(course)
+                self.tracker.show_course_top_learners(course)
             else:
                 print("Unknown course.")
 

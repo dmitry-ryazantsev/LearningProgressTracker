@@ -165,6 +165,40 @@ class TestStatistics:
             "HC": "n/a"
         }, "No statistics should be available when there are no students"
 
+    def test_top_learners_course_info_is_shown_in_correct_format(self, capsys):
+        sut = LearningProgressTracker()
+        sut.add_students("John Smith jsmith@hotmail.com")
+        sut.add_students("Robert Jemison Van de Graaff robertvdgraaff@mit.edu")
+
+        sut.add_points("d4735e3a26 656 11 0 1")
+        sut.add_points("6b86b273ff 3 7 0 5")
+
+        course = "python"
+
+        sut.show_course_top_learners(course)
+
+        captured = capsys.readouterr()
+        output_lines = captured.out.strip().split('\n')
+        course_info_lines = output_lines[4:]
+
+        assert course_info_lines[0] == "Python", "Expected course name in the header"
+        assert course_info_lines[1].strip() == "id           points     completed", "Expected a line with 'id', 'points', 'completed'"
+        assert course_info_lines[
+                   2].strip() == "d4735e3a26   656        100.0%", "Incorrect data or print format"
+        assert course_info_lines[
+                   3] == "6b86b273ff   3          0.5%", "Incorrect data or print format"
+
+    def test_should_show_only_course_name_and_column_headers_with_no_data_available(self, capsys):
+        sut = LearningProgressTracker()
+        course = "dsa"
+        sut.show_course_top_learners(course)
+
+        captured = capsys.readouterr()
+        output_lines = captured.out.strip().split('\n')
+
+        assert output_lines[0] == "DSA", "Expected course name in the header"
+        assert output_lines[1] == "id           points     completed", "Expected a line with 'id', 'points', 'completed'"
+
 
 def test_should_only_add_students_that_match_credential_requirements():
     sut = LearningProgressTracker()
