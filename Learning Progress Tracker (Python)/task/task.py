@@ -13,6 +13,7 @@ class LearningProgressTracker:
             "Databases": 480,
             "Flask": 550
         }
+        self.notified_students = {course: [] for course in self.courses}
         self.statistics = {
             "MP": "n/a",
             "LP": "n/a",
@@ -216,6 +217,28 @@ class LearningProgressTracker:
 
         return completion_percentage
 
+    def notify_students(self):
+        students_to_notify = []
+
+        for student in self.students:
+            for course, points in student["course_points"].items():
+                if (points >= self.course_completion_requirements[course]
+                        and student["id"] not in self.notified_students[course]):
+                    credentials = student["credentials"].split()
+                    email = credentials[-1]
+                    full_name = " ".join(credentials[0:-1]).title()
+
+                    print(f"To: {email}\n"
+                          "Re: Your Learning Progress\n"
+                          f"Hello, {full_name}! You have accomplished our {course} course!")
+
+                    self.notified_students[course].append(student["id"])
+
+                    if student["id"] not in students_to_notify:
+                        students_to_notify.append(student["id"])
+
+        print(f"Total {len(students_to_notify)} students have been notified.")
+
 
 class UserMenu:
     def __init__(self, tracker):
@@ -282,6 +305,9 @@ class UserMenu:
             else:
                 print("Unknown course.")
 
+    def notify_command(self):
+        self.tracker.notify_students()
+
     def display_menu(self):
         self.greet_user()
         while True:
@@ -299,6 +325,8 @@ class UserMenu:
                 self.find_student_command()
             elif user_command == "statistics":
                 self.statistics_command()
+            elif user_command == "notify":
+                self.notify_command()
             elif user_command == "back":
                 print("Enter 'exit' to exit the program.")
             elif user_command.strip() == "":
