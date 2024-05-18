@@ -336,9 +336,12 @@ class UserMenu:
 
 
 def main():
-    tracker = LearningProgressTracker()
-    menu = UserMenu(tracker)
-    menu.display_menu()
+    try:
+        tracker = LearningProgressTracker()
+        menu = UserMenu(tracker)
+        menu.display_menu()
+    except KeyboardInterrupt:
+        print("Execution interrupted. Exiting program.")
 
 
 if __name__ == "__main__":
