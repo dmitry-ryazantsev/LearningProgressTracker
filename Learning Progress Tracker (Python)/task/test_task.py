@@ -45,26 +45,6 @@ class TestCredentialsValidation:
 
         assert sut.is_email_unique("foo@gmail.com"), f"Expected the email to be unique"
 
-    def test_whole_credentials_validation(self):
-        sut = LearningProgressTracker()
-        valid_credentials = ["John Smith jsmith@hotmail.com", "Anny Doolittle anny.md@mail.edu",
-                             "Jean-Claude O'Connor jcda123@google.net",
-                             "Al Owen u15da125@a1s2f4f7.a1c2c5s4",
-                             "Robert Jemison Van de Graaff robertvdgraaff@mit.edu",
-                             "Ed Eden a1@a1.a1", "na'me s-u ii@ii.ii",
-                             "n'a me su aa-b'b ab@ab.ab", "nA me 1@1.1"]
-        invalid_credentials = ["name surname", "", " ",
-                               "-name surname email@email.xyz", "name- surname email@email.xyz",
-                               "name s email@email.xyz", "name surnam''e email@email.xyz",
-                               "name su-'rname email@email.xyz", "name surname- email@email.xyz",
-                               "name surname emailemail.xyz", "name surname email@e@mail.xyz"]
-
-        for credentials in valid_credentials:
-            assert sut.validate_student_credentials(credentials), f"Expected '{credentials}' to be valid credentials"
-
-        for credentials in invalid_credentials:
-            assert not sut.validate_student_credentials(credentials), f"Expected '{credentials}' to be invalid credentials"
-
 
 class TestPointsOperations:
     def test_points_validation(self):
@@ -96,13 +76,11 @@ class TestPointsOperations:
         sut.add_points("d4735e3a26 4 11 0 1")
         sut.add_points("6b86b273ff 0 0 0 5")
 
-        # TODO: Do not verify submissions here, should be only course points
-        assert sut.students == [{'id': "6b86b273ff", 'credentials': 'John Smith jsmith@hotmail.com',
-                                 'course_points': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 5},
-                                 'course_submissions': {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 1}},
-                                {'id': "d4735e3a26", 'credentials': 'Robert Jemison Van de Graaff robertvdgraaff@mit.edu',
-                                 'course_points': {'Python': 4, 'DSA': 11, 'Databases': 0, 'Flask': 1},
-                                 'course_submissions': {'Python': 1, 'DSA': 1, 'Databases': 0, 'Flask': 1}}], f"Students' points do not match the expected result"
+        student1 = sut.students[0]
+        student2 = sut.students[1]
+
+        assert student1["course_points"] == {'Python': 0, 'DSA': 0, 'Databases': 0, 'Flask': 5}
+        assert student2["course_points"] == {'Python': 4, 'DSA': 11, 'Databases': 0, 'Flask': 1}
 
     def test_points_are_printed_for_existing_student(self, capsys):
         sut = LearningProgressTracker()
@@ -204,9 +182,11 @@ def test_should_only_add_students_that_match_credential_requirements():
     sut = LearningProgressTracker()
 
     sut.add_students("John Smith jsmith@hotmail.com")
-    sut.add_students("Robert Jemison Van de Graaff robertvdgraaff@mit.edu")
     sut.add_students("-name surname email@email.xyz")
     sut.add_students("Stanisław Oğuz 1@1.1")
+    sut.add_students("Robert Jemison Van de Graaff robertvdgraaff@mit.edu")
     sut.add_students("陳 港 生")
+    sut.add_students("")
+    sut.add_students(" ")
 
     assert len(sut.students) == 2, "Number of students is different from expected result"

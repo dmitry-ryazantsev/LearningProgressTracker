@@ -24,11 +24,19 @@ class LearningProgressTracker:
         }
 
     def add_students(self, credentials):
-        if self.validate_student_credentials(credentials):
+        parsed_credentials = self.parse_credentials(credentials)
+        if parsed_credentials is None:
+            print("Incorrect credentials.")
+            return
+
+        first_name, last_name, email = parsed_credentials
+        if self.validate_student_credentials(first_name, last_name, email):
             self.student_id += 1
             hashed_id = self.hash_student_id(self.student_id)
             self.students.append({"id": hashed_id,
-                                  "credentials": credentials,
+                                  "first_name": first_name.title(),
+                                  "last_name": last_name.title(),
+                                  "email": email,
                                   "course_points": {course: 0 for course in self.courses},
                                   "course_submissions": {course: 0 for course in self.courses}})
             print("The student has been added.")
@@ -81,16 +89,18 @@ class LearningProgressTracker:
         print(f"No student is found for id={student_id}.")
         return None
 
-    def validate_student_credentials(self, credentials):
+    @staticmethod
+    def parse_credentials(credentials):
         parts = credentials.split()
         if len(parts) < 3:  # Not enough parts to validate
-            print("Incorrect credentials.")
-            return False
+            return None
 
         first_name = parts[0]
         last_name = ' '.join(parts[1:-1])
         email = parts[-1]
+        return first_name, last_name, email
 
+    def validate_student_credentials(self, first_name, last_name, email):
         if not self.validate_name(first_name):
             print("Incorrect first name.")
             return False
@@ -127,8 +137,7 @@ class LearningProgressTracker:
 
     def is_email_unique(self, email):
         for student in self.students:
-            credentials = student["credentials"]
-            student_email = credentials.split()[-1]
+            student_email = student["email"]
             if student_email == email:
                 return False
 
@@ -218,24 +227,23 @@ class LearningProgressTracker:
         return completion_percentage
 
     def notify_students(self):
-        students_to_notify = []
+        students_to_notify = set()
 
         for student in self.students:
+            email = student['email']
+            full_name = f"{student['first_name']} {student['last_name']}"
+
             for course, points in student["course_points"].items():
                 if (points >= self.course_completion_requirements[course]
                         and student["id"] not in self.notified_students[course]):
-                    credentials = student["credentials"].split()
-                    email = credentials[-1]
-                    full_name = " ".join(credentials[0:-1]).title()
-
                     print(f"To: {email}\n"
                           "Re: Your Learning Progress\n"
                           f"Hello, {full_name}! You have accomplished our {course} course!")
 
+                    # Track how many unique students are being notified in the current method call
+                    students_to_notify.add(student["id"])
+                    # Track which students should not be notified again for the same course in the future
                     self.notified_students[course].append(student["id"])
-
-                    if student["id"] not in students_to_notify:
-                        students_to_notify.append(student["id"])
 
         print(f"Total {len(students_to_notify)} students have been notified.")
 
