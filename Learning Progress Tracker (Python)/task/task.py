@@ -13,7 +13,6 @@ class LearningProgressTracker:
             "Databases": 480,
             "Flask": 550
         }
-        self.notified_students = {course: [] for course in self.courses}
 
     def add_students(self, credentials):
         parsed_credentials = self.parse_credentials(credentials)
@@ -33,53 +32,11 @@ class LearningProgressTracker:
                                   "course_submissions": {course: 0 for course in self.courses}})
             print("The student has been added.")
 
-    def list_students(self):
-        if not self.students:
-            print("No students found.")
-        else:
-            print("Students:")
-            for student in self.students:
-                print(student["id"])
-
-    def add_points(self, points):
-        if not self.validate_points(points):
-            print("Incorrect points format.")
-            return
-
-        student_id, points_to_add = self.parse_points(points)
-        student = self.find_student_by_id(student_id)
-        if student is None:
-            return
-
-        course_points = student["course_points"]
-        submissions = student["course_submissions"]
-        for course, pts in zip(self.courses, points_to_add):
-            if pts > 0:
-                course_points[course] += pts
-                submissions[course] += 1
-        print("Points updated.")
-
-    def print_student_points(self, student_id):
-        student = self.find_student_by_id(student_id)
-        if student is None:
-            return
-
-        course_points = student["course_points"]
-        print(f"{student_id} points: Python={course_points['Python']}; DSA={course_points['DSA']}; Databases={course_points['Databases']}; Flask={course_points['Flask']}.")
-
     @staticmethod
     def hash_student_id(student_id):
         hashed_id = hashlib.sha256(str(student_id).encode()).hexdigest()
         shortened_hashed_id = hashed_id[:10]
         return shortened_hashed_id
-
-    def find_student_by_id(self, student_id):
-        for student in self.students:
-            if student["id"] == student_id:
-                return student
-
-        print(f"No student is found for id={student_id}.")
-        return None
 
     @staticmethod
     def parse_credentials(credentials):
@@ -135,6 +92,32 @@ class LearningProgressTracker:
 
         return True
 
+    def list_students(self):
+        if not self.students:
+            print("No students found.")
+        else:
+            print("Students:")
+            for student in self.students:
+                print(student["id"])
+
+    def add_points(self, points):
+        if not self.validate_points(points):
+            print("Incorrect points format.")
+            return
+
+        student_id, points_to_add = self.parse_points(points)
+        student = self.find_student_by_id(student_id)
+        if student is None:
+            return
+
+        course_points = student["course_points"]
+        submissions = student["course_submissions"]
+        for course, pts in zip(self.courses, points_to_add):
+            if pts > 0:
+                course_points[course] += pts
+                submissions[course] += 1
+        print("Points updated.")
+
     @staticmethod
     def validate_points(points):
         points_pattern = r'^\w+( \d+){4}$'
@@ -147,26 +130,21 @@ class LearningProgressTracker:
         points_to_add = [int(x) for x in data[1:]]
         return student_id, points_to_add
 
-    def notify_students(self):
-        students_to_notify = set()
+    def print_student_points(self, student_id):
+        student = self.find_student_by_id(student_id)
+        if student is None:
+            return
 
+        course_points = student["course_points"]
+        print(f"{student_id} points: Python={course_points['Python']}; DSA={course_points['DSA']}; Databases={course_points['Databases']}; Flask={course_points['Flask']}.")
+
+    def find_student_by_id(self, student_id):
         for student in self.students:
-            email = student['email']
-            full_name = f"{student['first_name']} {student['last_name']}"
+            if student["id"] == student_id:
+                return student
 
-            for course, points in student["course_points"].items():
-                if (points >= self.course_completion_requirements[course]
-                        and student["id"] not in self.notified_students[course]):
-                    print(f"To: {email}\n"
-                          "Re: Your Learning Progress\n"
-                          f"Hello, {full_name}! You have accomplished our {course} course!")
-
-                    # Track how many unique students are being notified in the current method call
-                    students_to_notify.add(student["id"])
-                    # Track which students should not be notified again for the same course in the future
-                    self.notified_students[course].append(student["id"])
-
-        print(f"Total {len(students_to_notify)} students have been notified.")
+        print(f"No student is found for id={student_id}.")
+        return None
 
 
 class Statistics:
@@ -259,10 +237,42 @@ class Statistics:
         return completion_percentage
 
 
+class Notification:
+    def __init__(self, courses, course_completion_requirements):
+        self.courses = courses
+        self.course_completion_requirements = course_completion_requirements
+        self.notified_students = {course: [] for course in self.courses}
+
+    def notify_students(self, students):
+        students_to_notify = set()
+
+        for student in students:
+            email = student['email']
+            full_name = f"{student['first_name']} {student['last_name']}"
+
+            for course, points in student["course_points"].items():
+                if (points >= self.course_completion_requirements[course]
+                        and student["id"] not in self.notified_students[course]):
+                    self.send_notification(email, full_name, course)
+                    # Track how many unique students are being notified in the current method call
+                    students_to_notify.add(student["id"])
+                    # Track which students should not be notified again for the same course in the future
+                    self.notified_students[course].append(student["id"])
+
+        print(f"Total {len(students_to_notify)} students have been notified.")
+
+    @staticmethod
+    def send_notification(email, full_name, course):
+        print(f"To: {email}\n"
+              f"Re: Your Learning Progress\n"
+              f"Hello, {full_name}! You have accomplished our {course} course!")
+
+
 class UserMenu:
     def __init__(self, tracker):
         self.tracker = tracker
         self.statistics = Statistics(tracker.courses, tracker.course_completion_requirements)
+        self.notifications = Notification(tracker.courses, tracker.course_completion_requirements)
 
     @staticmethod
     def greet_user():
@@ -327,7 +337,7 @@ class UserMenu:
                 print("Unknown course.")
 
     def notify_command(self):
-        self.tracker.notify_students()
+        self.notifications.notify_students(self.tracker.students)
 
     def display_menu(self):
         self.greet_user()
