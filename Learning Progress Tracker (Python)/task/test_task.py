@@ -1,4 +1,5 @@
 from task import LearningProgressTracker
+from task import Statistics
 import pytest
 
 
@@ -109,6 +110,7 @@ class TestPointsOperations:
 class TestStatistics:
     def test_calculating_statistics_with_data_available(self):
         sut = LearningProgressTracker()
+        statistics = Statistics(sut.courses, sut.course_completion_requirements)
 
         sut.add_students("John Doe johnd@email.net")
         sut.add_students("Jane Spark jspark@yahoo.com")
@@ -120,9 +122,9 @@ class TestStatistics:
         sut.add_points("d4735e3a26 7 0 0 0")
         sut.add_points("d4735e3a26 9 0 0 5")
 
-        sut.calculate_course_statistics()
+        statistics.calculate_course_statistics(sut.students)
 
-        assert sut.statistics == {
+        assert statistics.get_statistics() == {
             "MP": "Python, Databases, Flask",
             "LP": "DSA",
             "HA": "Python",
@@ -133,8 +135,9 @@ class TestStatistics:
 
     def test_calculating_statistics_with_no_data_available(self):
         sut = LearningProgressTracker()
+        statistics = Statistics(sut.courses, sut.course_completion_requirements)
 
-        assert sut.statistics == {
+        assert statistics.get_statistics() == {
             "MP": "n/a",
             "LP": "n/a",
             "HA": "n/a",
@@ -145,6 +148,8 @@ class TestStatistics:
 
     def test_top_learners_course_info_is_shown_in_correct_format(self, capsys):
         sut = LearningProgressTracker()
+        statistics = Statistics(sut.courses, sut.course_completion_requirements)
+
         sut.add_students("John Smith jsmith@hotmail.com")
         sut.add_students("Robert Jemison Van de Graaff robertvdgraaff@mit.edu")
 
@@ -153,7 +158,7 @@ class TestStatistics:
 
         course = "python"
 
-        sut.show_course_top_learners(course)
+        statistics.show_course_top_learners(course, sut.students)
 
         captured = capsys.readouterr()
         output_lines = captured.out.strip().split('\n')
@@ -168,8 +173,10 @@ class TestStatistics:
 
     def test_should_show_only_course_name_and_column_headers_when_top_learners_data_is_blank(self, capsys):
         sut = LearningProgressTracker()
+        statistics = Statistics(sut.courses, sut.course_completion_requirements)
+
         course = "dsa"
-        sut.show_course_top_learners(course)
+        statistics.show_course_top_learners(course, sut.students)
 
         captured = capsys.readouterr()
         output_lines = captured.out.strip().split('\n')

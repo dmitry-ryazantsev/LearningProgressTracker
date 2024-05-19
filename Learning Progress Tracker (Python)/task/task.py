@@ -14,14 +14,6 @@ class LearningProgressTracker:
             "Flask": 550
         }
         self.notified_students = {course: [] for course in self.courses}
-        self.statistics = {
-            "MP": "n/a",
-            "LP": "n/a",
-            "HA": "n/a",
-            "LA": "n/a",
-            "EC": "n/a",
-            "HC": "n/a"
-        }
 
     def add_students(self, credentials):
         parsed_credentials = self.parse_credentials(credentials)
@@ -155,13 +147,48 @@ class LearningProgressTracker:
         points_to_add = [int(x) for x in data[1:]]
         return student_id, points_to_add
 
-    def calculate_course_statistics(self):
+    def notify_students(self):
+        students_to_notify = set()
+
+        for student in self.students:
+            email = student['email']
+            full_name = f"{student['first_name']} {student['last_name']}"
+
+            for course, points in student["course_points"].items():
+                if (points >= self.course_completion_requirements[course]
+                        and student["id"] not in self.notified_students[course]):
+                    print(f"To: {email}\n"
+                          "Re: Your Learning Progress\n"
+                          f"Hello, {full_name}! You have accomplished our {course} course!")
+
+                    # Track how many unique students are being notified in the current method call
+                    students_to_notify.add(student["id"])
+                    # Track which students should not be notified again for the same course in the future
+                    self.notified_students[course].append(student["id"])
+
+        print(f"Total {len(students_to_notify)} students have been notified.")
+
+
+class Statistics:
+    def __init__(self, courses, course_completion_requirements):
+        self.courses = courses
+        self.course_completion_requirements = course_completion_requirements
+        self.statistics = {
+            "MP": "n/a",  # Most Popular
+            "LP": "n/a",  # Least Popular
+            "HA": "n/a",  # Highest Activity
+            "LA": "n/a",  # Lowest Activity
+            "EC": "n/a",  # Easiest Course
+            "HC": "n/a"  # Hardest Course
+        }
+
+    def calculate_course_statistics(self, students):
         course_enrollment = {course: 0 for course in self.courses}
         course_submissions = {course: 0 for course in self.courses}
         course_points = {course: 0 for course in self.courses}
         average_course_points = {course: 0.0 for course in self.courses}
 
-        for student in self.students:
+        for student in students:
             for course, points in student["course_points"].items():
                 if points > 0:
                     course_enrollment[course] += 1
@@ -192,18 +219,23 @@ class LearningProgressTracker:
         min_value = min(dictionary.values())
         high_stat_course_list = [course for course, value in dictionary.items() if value == max_value]
         self.statistics[high_stat] = ", ".join(high_stat_course_list)
+
+        # If max and min values are equal, then all courses are max and min stays n/a as set by default
         if max_value != min_value:
             low_stat_course_list = [course for course, value in dictionary.items() if value == min_value]
             self.statistics[low_stat] = ", ".join(low_stat_course_list)
 
-    def show_course_top_learners(self, course):
+    def get_statistics(self):
+        return self.statistics
+
+    def show_course_top_learners(self, course, students):
         course = course.upper() if course == "dsa" else course.capitalize()
 
         print(course)
         print("{:<12} {:<10} {:9}".format("id", "points", "completed"))
 
         student_course_info = []
-        for student in self.students:
+        for student in students:
             course_points = student["course_points"][course]
             if course_points > 0:
                 student_course_info.append({"id": student["id"],
@@ -226,31 +258,11 @@ class LearningProgressTracker:
 
         return completion_percentage
 
-    def notify_students(self):
-        students_to_notify = set()
-
-        for student in self.students:
-            email = student['email']
-            full_name = f"{student['first_name']} {student['last_name']}"
-
-            for course, points in student["course_points"].items():
-                if (points >= self.course_completion_requirements[course]
-                        and student["id"] not in self.notified_students[course]):
-                    print(f"To: {email}\n"
-                          "Re: Your Learning Progress\n"
-                          f"Hello, {full_name}! You have accomplished our {course} course!")
-
-                    # Track how many unique students are being notified in the current method call
-                    students_to_notify.add(student["id"])
-                    # Track which students should not be notified again for the same course in the future
-                    self.notified_students[course].append(student["id"])
-
-        print(f"Total {len(students_to_notify)} students have been notified.")
-
 
 class UserMenu:
     def __init__(self, tracker):
         self.tracker = tracker
+        self.statistics = Statistics(tracker.courses, tracker.course_completion_requirements)
 
     @staticmethod
     def greet_user():
@@ -295,21 +307,22 @@ class UserMenu:
         print("Type the name of a course to see details or 'back' to quit:")
 
         if self.tracker.students:
-            self.tracker.calculate_course_statistics()
+            self.statistics.calculate_course_statistics(self.tracker.students)
 
-        print(f"Most popular: {self.tracker.statistics['MP']}\n"
-              f"Least popular: {self.tracker.statistics['LP']}\n"
-              f"Highest activity: {self.tracker.statistics['HA']}\n"
-              f"Lowest activity: {self.tracker.statistics['LA']}\n"
-              f"Easiest course: {self.tracker.statistics['EC']}\n"
-              f"Hardest course: {self.tracker.statistics['HC']}")
+        stats = self.statistics.get_statistics()
+        print(f"Most popular: {stats['MP']}\n"
+              f"Least popular: {stats['LP']}\n"
+              f"Highest activity: {stats['HA']}\n"
+              f"Lowest activity: {stats['LA']}\n"
+              f"Easiest course: {stats['EC']}\n"
+              f"Hardest course: {stats['HC']}")
 
         while True:
             course = input().lower().strip()
             if course == "back":
                 break
-            if course in [course.lower() for course in self.tracker.courses]:
-                self.tracker.show_course_top_learners(course)
+            if course in [course.lower() for course in self.statistics.courses]:
+                self.statistics.show_course_top_learners(course, self.tracker.students)
             else:
                 print("Unknown course.")
 
