@@ -27,7 +27,7 @@ class LearningProgressTracker:
             self.students.append({"id": hashed_id,
                                   "first_name": first_name.title(),
                                   "last_name": last_name.title(),
-                                  "email": email,
+                                  "email": email.lower(),
                                   "course_points": {course: 0 for course in self.courses},
                                   "course_submissions": {course: 0 for course in self.courses}})
             print("The student has been added.")

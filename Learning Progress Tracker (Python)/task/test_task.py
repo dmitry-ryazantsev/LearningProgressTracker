@@ -1,5 +1,6 @@
 from task import LearningProgressTracker
 from task import Statistics
+from task import Notification
 import pytest
 
 
@@ -183,6 +184,83 @@ class TestStatistics:
 
         assert output_lines[0] == "DSA", "Expected course name in the header"
         assert output_lines[1] == "id           points     completed", "Expected a line with 'id', 'points', 'completed'"
+
+
+class TestNotification:
+    def test_notify_student_who_completed_multiple_courses(self, capsys):
+        sut = LearningProgressTracker()
+        notification = Notification(sut.courses, sut.course_completion_requirements)
+
+        sut.add_students("John Doe johnd@email.net")
+        sut.add_students("Jane Spark jspark@yahoo.com")
+
+        sut.add_points("6b86b273ff 600 400 0 12")
+        sut.add_points("d4735e3a26 4 11 0 1")
+
+        notification.notify_students(sut.students)
+
+        captured = capsys.readouterr()
+        last_output = captured.out.strip().split('\n')[-1]
+
+        assert last_output == "Total 1 students have been notified.", "The number of students is different from the expected result"
+        assert notification.notified_students == {'Python': ['6b86b273ff'],
+                                                  'DSA': ['6b86b273ff'],
+                                                  'Databases': [],
+                                                  'Flask': []}, "Notified students data does not match the expected result"
+
+    def test_notify_students_who_completed_the_same_course(self, capsys):
+        sut = LearningProgressTracker()
+        notification = Notification(sut.courses, sut.course_completion_requirements)
+
+        sut.add_students("John Doe johnd@email.net")
+        sut.add_students("Jane Spark jspark@yahoo.com")
+
+        sut.add_points("6b86b273ff 7 230 6 558")
+        sut.add_points("d4735e3a26 0 121 56 554")
+
+        notification.notify_students(sut.students)
+
+        captured = capsys.readouterr()
+        last_output = captured.out.strip().split('\n')[-1]
+
+        assert last_output == "Total 2 students have been notified.", "The number of students is different from the expected result"
+        assert notification.notified_students == {'Python': [],
+                                                  'DSA': [],
+                                                  'Databases': [],
+                                                  'Flask': ['6b86b273ff', 'd4735e3a26']}, "Notified students data does not match the expected result"
+
+    def test_notification_about_completed_course_is_sent_only_once(self, capsys):
+        sut = LearningProgressTracker()
+        notification = Notification(sut.courses, sut.course_completion_requirements)
+
+        sut.add_students("John Doe johnd@email.net")
+        sut.add_points("6b86b273ff 5 7 480 12")
+        notification.notify_students(sut.students)
+        notification.notify_students(sut.students)
+
+        captured = capsys.readouterr()
+        last_output = captured.out.strip().split('\n')[-1]
+
+        assert last_output == "Total 0 students have been notified.", "The number of students is different from the expected result"
+        assert notification.notified_students == {'Python': [],
+                                                  'DSA': [],
+                                                  'Databases': ['6b86b273ff'],
+                                                  'Flask': []}, "Notified students data does not match the expected result"
+
+    def test_notification_format_is_correct(self, capsys):
+        sut = LearningProgressTracker()
+        notification = Notification(sut.courses, sut.course_completion_requirements)
+
+        sut.add_students("jean-claude o'connor JCDA123@GOOGLE.NET")
+        sut.add_points("6b86b273ff 5 7 480 12")
+        notification.notify_students(sut.students)
+
+        captured = capsys.readouterr()
+        notification_email = captured.out.strip().split('\n')[-4:-1]
+
+        assert notification_email == ['To: jcda123@google.net',
+                                      'Re: Your Learning Progress',
+                                      "Hello, Jean-Claude O'Connor! You have accomplished our Databases course!"], "The email format does not match the expected format"
 
 
 def test_should_only_add_students_that_match_credential_requirements():
