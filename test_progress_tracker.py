@@ -1,6 +1,6 @@
-from task import LearningProgressTracker
-from task import Statistics
-from task import Notification
+from progress_tracker import LearningProgressTracker
+from progress_tracker import Statistics
+from progress_tracker import Notification
 import pytest
 
 
